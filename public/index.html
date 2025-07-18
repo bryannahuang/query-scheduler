@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Scheduler</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center">
+                    <i class="fas fa-search text-blue-600 text-2xl mr-3"></i>
+                    <h1 class="text-3xl font-bold text-gray-900">Query Scheduler</h1>
+                </div>
+                <button id="addQueryBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Query
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <i class="fas fa-clock text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">Scheduled Queries</p>
+                        <p id="scheduledCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">Completed Today</p>
+                        <p id="completedCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100">
+                        <i class="fas fa-file-alt text-purple-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500">Documents Created</p>
+                        <p id="documentsCount" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Queries List -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-xl font-semibold text-gray-900">Your Scheduled Queries</h2>
+            </div>
+            <div id="queriesList" class="divide-y divide-gray-200">
+                <!-- Queries will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Query Modal -->
+    <div id="addQueryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-md w-full p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Add New Query</h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="addQueryForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Query Text</label>
+                        <textarea id="queryText" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="What do you want to search for?"></textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Schedule</label>
+                        <select id="scheduleType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="daily">Daily at 9:00 AM</option>
+                            <option value="weekly">Weekly on Monday at 9:00 AM</option>
+                            <option value="custom">Custom Schedule</option>
+                        </select>
+                    </div>
+                    
+                    <div id="customSchedule" class="mb-4 hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Custom Cron Schedule</label>
+                        <input type="text" id="cronSchedule" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="0 9 * * *">
+                        <p class="text-xs text-gray-500 mt-1">Format: minute hour day month day-of-week</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range (Optional)</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" id="dateStart" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="date" id="dateEnd" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Website Filters (Optional)</label>
+                        <input type="text" id="websiteFilters" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="site:example.com OR site:another.com">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Query</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg hidden">
+        <i class="fas fa-spinner fa-spin mr-2"></i>
+        Loading...
+    </div>
+
+    <!-- Follow-up Modal -->
+    <div id="followupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-lg max-w-lg w-full p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Ask Follow-up Question</h3>
+                    <button id="closeFollowupModal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        This follow-up will automatically run 5 minutes after the main query executes and will have access to the actual results as context.
+                    </p>
+                </div>
+                
+                <form id="followupForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Follow-up Question</label>
+                        <textarea id="followupQueryText" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Ask a follow-up question about the previous results... (e.g., 'Can you elaborate on the second point?' or 'What are the implications of this?')"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">This question will be asked with the context of the previous query's results.</p>
+                    </div>
+                    
+                    <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <p class="text-sm text-green-800">
+                            <i class="fas fa-magic mr-1"></i>
+                            <strong>Auto-trigger:</strong> This follow-up will automatically run the specified time AFTER the main query completes (not after creation).
+                        </p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date Range (Optional)</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" id="followupDateStart" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="date" id="followupDateEnd" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Website Filters (Optional)</label>
+                        <input type="text" id="followupWebsiteFilters" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="site:example.com OR site:another.com">
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelFollowupBtn" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">Ask Follow-up in 5 Minutes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="app.js"></script>
+</body>
+</html>
